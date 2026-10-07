@@ -1,0 +1,22 @@
+enum OfferStatus {
+  ACTIVE
+  MATCHED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum MatchStatus {
+  PENDING
+  COMPLETED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  createdAt DateTime @default(now())
+}

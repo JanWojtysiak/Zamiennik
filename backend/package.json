@@ -1,0 +1,23 @@
+{
+  "name": "zamiennik-backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "Jan Wojtysiak",
+  "type": "module",
+  "main": "app.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "prisma skills sync || exit 0"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.4",
+    "prisma": "^7.10.0",
+    "typescript": "^7.0.2"
+  }
+}
