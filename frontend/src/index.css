@@ -1,4 +1,15 @@
+@import "tailwindcss";
+
 :root {
+  --nav-bg: #efeff1;
+  --nav-fg: #06022e;
+  --nav-muted: rgb(6 2 46 / 0.62);
+  --nav-hover: rgb(6 6 51 / 0.06);
+  --nav-border: rgb(6 6 51 / 0.1);
+  --nav-accent: #9b1b30;
+  --nav-accent-bg: rgb(155 27 48 / 0.1);
+  --nav-image: url("/nav-campus.jpg");
+
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -30,8 +41,27 @@
   }
 }
 
+@theme inline {
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-fg: var(--nav-fg);
+  --color-nav-muted: var(--nav-muted);
+  --color-nav-hover: var(--nav-hover);
+  --color-nav-border: var(--nav-border);
+  --color-nav-accent: var(--nav-accent);
+  --color-nav-accent-bg: var(--nav-accent-bg);
+  --font-roboto: Roboto, system-ui, "Segoe UI", sans-serif;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
+    --nav-bg: #333340;
+    --nav-fg: #d6d3fd;
+    --nav-muted: rgb(214 211 253 / 0.68);
+    --nav-hover: rgb(214 211 253 / 0.08);
+    --nav-border: rgb(214 211 253 / 0.14);
+    --nav-accent: #ff8597;
+    --nav-accent-bg: rgb(255 133 151 / 0.14);
+
     --text: #9ca3af;
     --text-h: #f3f4f6;
     --bg: #16171d;
@@ -51,11 +81,7 @@
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -64,6 +90,17 @@
 
 body {
   margin: 0;
+}
+
+.auth-campus {
+  background-color: #2a3038;
+  background-image: linear-gradient(
+      rgb(8 10 18 / 0.48),
+      rgb(8 10 18 / 0.62)
+    ),
+    var(--nav-image);
+  background-size: cover;
+  background-position: center 45%;
 }
 
 h1,

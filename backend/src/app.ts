@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import { authRouter } from "../auth/authRouter.js";
+import { prisma } from "../lib/prisma.js";
 
 const app: Express = express();
 
@@ -17,6 +18,25 @@ app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
+});
+
+app.get("/health", async (req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.status(200).json({
+      status: "ok",
+      database: "connected",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "error",
+      database: "disconnected",
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 app.listen(3000);

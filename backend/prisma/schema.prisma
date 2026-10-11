@@ -28,18 +28,32 @@ enum MatchStatus {
   EXPIRED
 }
 
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
+  @@map("announcement")
+}
+
 model User {
-  id            String    @id
-  email         String    @unique
-  firstName     String
-  lastName      String
-  createdAt     DateTime  @default(now())
-  name          String
-  emailVerified Boolean   @default(false)
-  image         String?
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id             String         @id
+  email          String         @unique
+  firstName      String
+  lastName       String
+  createdAt      DateTime       @default(now())
+  name           String
+  emailVerified  Boolean        @default(false)
+  image          String?
+  updatedAt      DateTime       @updatedAt
+  sessions       Session[]
+  accounts       Account[]
+  announcements  Announcement[]
 
   @@map("user")
 }

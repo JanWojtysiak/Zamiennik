@@ -2,15 +2,15 @@ services:
   backend:
     build: ./backend
     env_file:
-      - .env
+      - ./backend/.env
     ports:
       - "127.0.0.1:3000:3000"
     environment:
       DATABASE_URL: postgresql://zamiennik:zamiennik@postgres:5432/zamiennik
     volumes:
-      - .:/app
+      - ./backend:/app
       - /app/node_modules
-    command: sh -c "npm run prisma:emit && npm run db:update -- -y && npm run start:dev"
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npx tsx watch src/app.ts"
     depends_on:
       postgres:
         condition: service_healthy
