@@ -1,7 +1,8 @@
 import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
-import { authRouter } from "../auth/authRouter.js";
-import { prisma } from "../lib/prisma.js";
+import { authRouter } from "./auth/authRoutes.js";
+import { prisma } from "./lib/prisma.js";
+import offerRouter from "./offers/offersRoutes.js";
 
 const app: Express = express();
 
@@ -15,7 +16,7 @@ app.use(
 // Before express.json(), as Better Auth docs require: it reads the raw request body itself.
 app.use("/api/auth", authRouter);
 app.use(express.json());
-
+app.use("/api/offer", offerRouter);
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });

@@ -7,3 +7,8 @@ export async function getSession(headers: IncomingHttpHeaders) {
     headers: fromNodeHeaders(headers),
   });
 }
+
+export async function getSessionUserId(headers: IncomingHttpHeaders) {
+  const session = await getSession(headers);
+  return session?.user.id ?? null;
+}
