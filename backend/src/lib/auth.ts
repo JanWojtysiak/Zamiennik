@@ -35,5 +35,5 @@ export const auth = betterAuth({
       }
     }),
   },
-  trustedOrigins: [process.env.FRONTEND_URL ?? "http://localhost:5173"],
+  trustedOrigins: [process.env.FRONTEND_URL ?? "http://localhost:18473"],
 });

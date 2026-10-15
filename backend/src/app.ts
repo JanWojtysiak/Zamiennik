@@ -8,7 +8,7 @@ const app: Express = express();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
+    origin: process.env.FRONTEND_URL ?? "http://localhost:18473",
     credentials: true,
   }),
 );
@@ -16,7 +16,7 @@ app.use(
 // Before express.json(), as Better Auth docs require: it reads the raw request body itself.
 app.use("/api/auth", authRouter);
 app.use(express.json());
-app.use("/api/offer", offerRouter);
+app.use("/api/offers", offerRouter);
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });
