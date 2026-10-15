@@ -3,7 +3,7 @@ import { authClient, type User } from "@/lib/auth-client";
 import { Logo } from "@/components/Logo";
 
 const NAV_ITEMS = [
-  { id: "pulpit", label: "Pulpit" },
+  { id: "ogloszenia", label: "Ogłoszenia" },
   { id: "kursy", label: "Katalog kursów" },
   { id: "zamienniki", label: "Zamienniki" },
   { id: "wnioski", label: "Moje wnioski" },
@@ -27,9 +27,9 @@ export function Navbar({ user }: { user: User }) {
     <header className="sticky top-0 z-21 w-full bg-nav-bg/88 font-roboto text-[15px] leading-snug text-nav-fg text-left shadow-[0_3px_6px_rgb(6_6_51_/_0.12)] backdrop-blur-md backdrop-saturate-150">
       <div className="flex h-16 items-center gap-10 px-[clamp(16px,3vw,40px)]">
         <a
-          href="#pulpit"
+          href="#ogloszenia"
           className={`flex shrink-0 items-center gap-3 no-underline text-inherit ${focusRing}`}
-          onClick={() => navigate("pulpit")}
+          onClick={() => navigate("ogloszenia")}
         >
           <Logo className="size-[38px] text-[#111111]" />
           <span className="flex flex-col leading-tight">

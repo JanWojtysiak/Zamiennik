@@ -8,7 +8,6 @@
   --nav-border: rgb(6 6 51 / 0.1);
   --nav-accent: #9b1b30;
   --nav-accent-bg: rgb(155 27 48 / 0.1);
-  --nav-image: url("/nav-campus.jpg");
 
   --text: #6b6375;
   --text-h: #08060d;
@@ -90,17 +89,6 @@
 
 body {
   margin: 0;
-}
-
-.auth-campus {
-  background-color: #2a3038;
-  background-image: linear-gradient(
-      rgb(8 10 18 / 0.48),
-      rgb(8 10 18 / 0.62)
-    ),
-    var(--nav-image);
-  background-size: cover;
-  background-position: center 45%;
 }
 
 h1,

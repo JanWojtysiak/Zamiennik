@@ -15,14 +15,11 @@ const errorMessages: Record<string, string> = {
 };
 
 const focusRing =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nav-accent";
 
 const fieldClass =
-  "mt-1 w-full rounded border border-white/40 bg-white px-3 py-2 text-[15px] text-[#06022e] placeholder:text-[rgb(6_2_46_/_0.4)] " +
+  "mt-1 w-full rounded border border-nav-border bg-[var(--bg)] px-3 py-2 text-[15px] text-nav-fg placeholder:text-nav-muted " +
   focusRing;
-
-const onPhoto =
-  "[text-shadow:0_1px_2px_rgb(0_0_0_/_0.7),0_4px_18px_rgb(0_0_0_/_0.45)]";
 
 export function AuthPage() {
   const [mode, setMode] = useState<Mode>("signIn");
@@ -65,18 +62,16 @@ export function AuthPage() {
   }
 
   return (
-    <div className="auth-campus flex min-h-svh flex-col text-left font-roboto text-[15px] leading-snug text-white [color-scheme:light]">
-      <header className="w-full">
+    <div className="flex min-h-svh flex-col bg-[var(--bg)] text-left font-roboto text-[15px] leading-snug text-nav-fg">
+      <header className="w-full bg-nav-bg/88 text-nav-fg shadow-[0_3px_6px_rgb(6_6_51_/_0.12)] backdrop-blur-md backdrop-saturate-150">
         <div className="flex h-16 items-center px-[clamp(16px,3vw,40px)]">
           <span className="flex items-center gap-3">
-            <Logo className="size-[38px] text-white drop-shadow-[0_2px_6px_rgb(0_0_0_/_0.55)]" />
+            <Logo className="size-[38px] text-[#111111]" />
             <span className="flex flex-col leading-tight">
-              <span
-                className={`text-[20px] font-bold tracking-wide text-white ${onPhoto}`}
-              >
+              <span className="text-[20px] font-bold tracking-tight">
                 Zamiennik
               </span>
-              <span className={`text-xs font-medium text-white/90 ${onPhoto}`}>
+              <span className="text-xs font-medium text-nav-muted">
                 Stworzony przez studenta dla studentów
               </span>
             </span>
@@ -84,18 +79,17 @@ export function AuthPage() {
         </div>
       </header>
 
-      <main className="flex flex-1 justify-center px-4 py-14">
+      <main className="flex flex-1 justify-center px-[clamp(16px,3vw,40px)] py-10">
         <form
           onSubmit={handleSubmit}
-          className="flex w-full max-w-[360px] flex-col gap-4 text-left"
+          className="flex h-fit w-full max-w-[400px] flex-col gap-4 rounded-lg border border-nav-border bg-[var(--bg)] px-6 py-7 text-left shadow-[0_3px_6px_rgb(6_6_51_/_0.12)]"
         >
           <h1
-            className={`font-bold ${onPhoto}`}
+            className="border-b-[3px] border-nav-accent pb-2 font-bold text-nav-fg"
             style={{
               margin: 0,
               fontSize: 28,
-              letterSpacing: "0.04em",
-              color: "#fff",
+              letterSpacing: "-0.02em",
               fontWeight: 700,
             }}
           >
@@ -104,7 +98,7 @@ export function AuthPage() {
 
           {mode === "signUp" && (
             <>
-              <label className={`flex flex-col text-sm font-semibold ${onPhoto}`}>
+              <label className="flex flex-col text-sm font-semibold text-nav-muted">
                 Imię
                 <input
                   className={fieldClass}
@@ -114,7 +108,7 @@ export function AuthPage() {
                   required
                 />
               </label>
-              <label className={`flex flex-col text-sm font-semibold ${onPhoto}`}>
+              <label className="flex flex-col text-sm font-semibold text-nav-muted">
                 Nazwisko
                 <input
                   className={fieldClass}
@@ -127,7 +121,7 @@ export function AuthPage() {
             </>
           )}
 
-          <label className={`flex flex-col text-sm font-semibold ${onPhoto}`}>
+          <label className="flex flex-col text-sm font-semibold text-nav-muted">
             Adres e-mail (@pwr.edu.pl)
             <input
               className={fieldClass}
@@ -139,7 +133,7 @@ export function AuthPage() {
             />
           </label>
 
-          <label className={`flex flex-col text-sm font-semibold ${onPhoto}`}>
+          <label className="flex flex-col text-sm font-semibold text-nav-muted">
             Hasło
             <input
               className={fieldClass}
@@ -154,10 +148,7 @@ export function AuthPage() {
           </label>
 
           {error && (
-            <p
-              className={`m-0 text-sm font-semibold text-[#ffb3be] ${onPhoto}`}
-              role="alert"
-            >
+            <p className="m-0 text-sm font-semibold text-nav-accent" role="alert">
               {error}
             </p>
           )}
@@ -177,7 +168,7 @@ export function AuthPage() {
           <button
             type="button"
             onClick={switchMode}
-            className={`cursor-pointer self-start border-0 bg-transparent p-0 text-sm font-semibold text-white hover:underline ${onPhoto} ${focusRing}`}
+            className={`cursor-pointer self-start border-0 bg-transparent p-0 text-sm font-semibold text-nav-accent hover:underline ${focusRing}`}
           >
             {mode === "signUp"
               ? "Masz już konto? Zaloguj się"
