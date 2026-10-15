@@ -4,9 +4,10 @@ services:
     env_file:
       - ./backend/.env
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:18421:3000"
     environment:
       DATABASE_URL: postgresql://zamiennik:zamiennik@postgres:5432/zamiennik
+      FRONTEND_URL: http://localhost:18473
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -18,7 +19,9 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "127.0.0.1:5173:5173"
+      - "127.0.0.1:18473:5173"
+    environment:
+      API_PROXY_TARGET: http://backend:3000
     volumes:
       - ./frontend:/app
       - /app/node_modules
