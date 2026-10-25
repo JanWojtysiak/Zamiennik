@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import type { User } from "@/lib/auth-client";
 import { Navbar } from "@/components/Navbar";
 import { OfferFilters, type OfferFilterId } from "@/components/OfferFilters";
+import { OfferCard, type Offer } from "@/components/OfferCard";
 import { OfferForm } from "@/components/OfferForm";
 
 export function Dashboard({ user }: { user: User }) {
-  const [offers, setOffers] = useState<any[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [activeFilters, setActiveFilters] = useState<Set<OfferFilterId>>(
     () => new Set(),
   );
@@ -21,28 +25,82 @@ export function Dashboard({ user }: { user: User }) {
   }
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadOffers() {
       try {
-        const response = await fetch("/api/offers", {
-          method: "GET",
-          credentials: "include",
-        });
+        const response = await fetch(
+          mineOnly ? "/api/offers/mine" : "/api/offers",
+          { credentials: "include" },
+        );
         if (!response.ok) {
-          const error = await response.json().catch(() => null);
-          throw new Error(
-            error?.message || "Wystąpił błąd podczas ładowania ogłoszeń",
-          );
+          throw new Error(`status ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as Offer[];
+        if (cancelled) return;
         setOffers(data);
-      } catch (error) {
-        console.error(error instanceof Error ? error.message : "Wystąpił błąd");
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setError("Nie udało się załadować ogłoszeń.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadOffers();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [mineOnly, reloadKey]);
+
+  function reloadOffers() {
+    setLoading(true);
+    setReloadKey((key) => key + 1);
+  }
+
+  function toggleFilterAndReload(id: OfferFilterId, checked: boolean) {
+    setLoading(true);
+    toggleFilter(id, checked);
+  }
+
+  let content;
+  if (loading && offers.length === 0) {
+    content = <p className="m-0 text-nav-muted">Ładowanie ogłoszeń…</p>;
+  } else if (error) {
+    content = (
+      <div className="flex flex-wrap items-center gap-3" role="alert">
+        <p className="m-0 font-semibold text-nav-accent">{error}</p>
+        <button
+          type="button"
+          onClick={reloadOffers}
+          className="cursor-pointer rounded-md border border-nav-border bg-transparent px-3 py-1.5 text-sm font-semibold text-nav-fg hover:bg-nav-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nav-accent"
+        >
+          Spróbuj ponownie
+        </button>
+      </div>
+    );
+  } else if (offers.length === 0) {
+    content = (
+      <p className="m-0 text-nav-muted">
+        {mineOnly ? "Nie masz jeszcze żadnych ogłoszeń." : "Brak ogłoszeń."}
+      </p>
+    );
+  } else {
+    content = (
+      <ul
+        className={`m-0 flex list-none flex-col gap-3 p-0 transition-opacity ${loading ? "opacity-60" : ""}`}
+        aria-busy={loading}
+      >
+        {offers.map((offer) => (
+          <li key={offer.id}>
+            <OfferCard offer={offer} mine={offer.createdById === user.id} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   return (
     <>
@@ -63,21 +121,14 @@ export function Dashboard({ user }: { user: User }) {
             >
               Ogłoszenia
             </h1>
-            <OfferForm />
-            <OfferFilters active={activeFilters} onToggle={toggleFilter} />
+            <OfferForm onCreated={reloadOffers} />
+            <OfferFilters
+              active={activeFilters}
+              onToggle={toggleFilterAndReload}
+            />
           </div>
 
-          <section aria-label="...">
-            {offers.length === 0 ? (
-              <p>Brak ogłoszeń.</p>
-            ) : (
-              <ul>
-                {offers.map((offer) => (
-                  <li key={offer.id}>{/* jedno ogłoszenie */}</li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <section aria-label="Lista ogłoszeń">{content}</section>
         </div>
       </main>
     </>
