@@ -3,12 +3,14 @@ import cors from "cors";
 import { authRouter } from "./auth/authRoutes.js";
 import { prisma } from "./lib/prisma.js";
 import offerRouter from "./offers/offersRoutes.js";
+import courseRouter from "./courses/coursesRoutes.js";
+import { frontendOrigins } from "./lib/auth.js";
 
 const app: Express = express();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ?? "http://localhost:18473",
+    origin: frontendOrigins,
     credentials: true,
   }),
 );
@@ -17,6 +19,7 @@ app.use(
 app.use("/api/auth", authRouter);
 app.use(express.json());
 app.use("/api/offers", offerRouter);
+app.use("/api/courses", courseRouter);
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });

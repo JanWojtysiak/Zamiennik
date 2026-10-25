@@ -21,7 +21,7 @@ export interface CourseSearchResult {
 
 const PAGE_SIZE = 20;
 
-export async function searchCoursesService(
+export async function getsearchCoursesService(
   query: string,
   page = 0,
 ): Promise<CourseSearchResult> {
