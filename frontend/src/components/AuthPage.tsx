@@ -35,18 +35,24 @@ export function AuthPage() {
     setError(null);
     setLoading(true);
 
-    const { error } =
-      mode === "signUp"
-        ? await authClient.signUp.email({
-            email,
-            password,
-            name: `${firstName} ${lastName}`,
-            firstName,
-            lastName,
-          })
-        : await authClient.signIn.email({ email, password });
+    let error: { code?: string; message?: string } | null;
+    try {
+      ({ error } =
+        mode === "signUp"
+          ? await authClient.signUp.email({
+              email,
+              password,
+              name: `${firstName} ${lastName}`,
+              firstName,
+              lastName,
+            })
+          : await authClient.signIn.email({ email, password }));
+    } catch (err) {
+      error = { message: err instanceof Error ? err.message : undefined };
+    } finally {
+      setLoading(false);
+    }
 
-    setLoading(false);
     if (error) {
       setError(
         errorMessages[error.code ?? ""] ??
