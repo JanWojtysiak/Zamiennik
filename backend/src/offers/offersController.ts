@@ -64,6 +64,12 @@ export async function postOfferController(req: Request, res: Response) {
       return res.status(400).json({ error: "Wszystkie pola są wymagane" });
     }
 
+    if (offeredCourseId !== wantedCourseId) {
+      return res.status(400).json({
+        error: "Można wymienić się tylko na grupę tego samego przedmiotu",
+      });
+    }
+
     const offer = await offersService.postOfferService({
       userId,
       offeredCourseId,

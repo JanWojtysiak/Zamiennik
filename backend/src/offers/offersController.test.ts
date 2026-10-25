@@ -41,7 +41,7 @@ describe.each([
     'postOfferController',
     offersController.postOfferController,
     postOfferService,
-    { body: { offeredCourseId: 1, wantedCourseId: 2 } },
+    { body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1' } },
   ],
 ])('%s', (_name, controller, service, reqOverrides) => {
   it('returns 401 when user is not logged in', async () => {
@@ -147,9 +147,24 @@ describe('postOfferController', () => {
     expect(postOfferService).not.toHaveBeenCalled();
   });
 
-  it('returns 201 when offer is created', async () => {
+  it('returns 400 when offered and wanted courses differ', async () => {
     const { req, res } = createReqRes({
       body: { offeredCourseId: 'course-1', wantedCourseId: 'course-2' },
+    });
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+
+    await offersController.postOfferController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Można wymienić się tylko na grupę tego samego przedmiotu',
+    });
+    expect(postOfferService).not.toHaveBeenCalled();
+  });
+
+  it('returns 201 when offer is created', async () => {
+    const { req, res } = createReqRes({
+      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1' },
     });
     const offer = createOffer();
     vi.mocked(getSessionUserId).mockResolvedValue('user');
@@ -160,7 +175,7 @@ describe('postOfferController', () => {
     expect(postOfferService).toHaveBeenCalledWith({
       userId: 'user',
       offeredCourseId: 'course-1',
-      wantedCourseId: 'course-2',
+      wantedCourseId: 'course-1',
     });
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(offer);
@@ -168,7 +183,7 @@ describe('postOfferController', () => {
 
   it('returns 500 when service throws an error', async () => {
     const { req, res } = createReqRes({
-      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-2' },
+      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1' },
     });
     vi.mocked(getSessionUserId).mockResolvedValue('user');
     vi.mocked(postOfferService).mockRejectedValue(new Error('db down'));
