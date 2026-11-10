@@ -53,7 +53,7 @@ export function AuthPage() {
       setLoading(false);
     }
 
-    if (error) {
+    if (error) {  
       setError(
         errorMessages[error.code ?? ""] ??
           error.message ??

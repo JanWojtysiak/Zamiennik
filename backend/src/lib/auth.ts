@@ -8,6 +8,12 @@ function isPwrEmail(email: string) {
   return domain === "pwr.edu.pl" || domain.endsWith(".pwr.edu.pl");
 }
 
+const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:18473";
+export const frontendOrigins = [
+  frontendUrl,
+  frontendUrl.replace("//localhost", "//127.0.0.1"),
+];
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql", // or "mysql", "sqlite", ...etc
@@ -35,5 +41,5 @@ export const auth = betterAuth({
       }
     }),
   },
-  trustedOrigins: [process.env.FRONTEND_URL ?? "http://localhost:18473"],
+  trustedOrigins: frontendOrigins,
 });
