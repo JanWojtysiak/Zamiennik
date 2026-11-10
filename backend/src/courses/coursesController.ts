@@ -26,3 +26,18 @@ export async function searchCoursesController(req: Request, res: Response) {
     return res.status(500).json({ error: "Bład serwera bład 500" });
   }
 }
+
+export async function getCourseGroupsController(req: Request, res: Response) {
+  try {
+    const { courseId } = req.params;
+
+    if (typeof courseId !== "string" || !courseId.trim()) {
+      return res.status(400).json({ error: "Nieprawidłowe id przedmiotu" });
+    }
+
+    const groups = await coursesService.getCourseGroupsService(courseId.trim());
+    return res.status(200).json(groups);
+  } catch {
+    return res.status(500).json({ error: "Bład serwera bład 500" });
+  }
+}
