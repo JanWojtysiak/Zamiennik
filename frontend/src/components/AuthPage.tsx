@@ -6,9 +6,6 @@ type Mode = "signIn" | "signUp";
 
 const errorMessages: Record<string, string> = {
   INVALID_EMAIL_OR_PASSWORD: "Nieprawidłowy email lub hasło",
-  USER_ALREADY_EXISTS: "Konto z tym adresem email już istnieje",
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:
-    "Konto z tym adresem email już istnieje",
   PASSWORD_TOO_SHORT: "Hasło musi mieć co najmniej 8 znaków",
   PASSWORD_TOO_LONG: "Hasło jest za długie",
   INVALID_EMAIL: "Nieprawidłowy adres email",
@@ -28,11 +25,13 @@ export function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
 
     let error: { code?: string; message?: string } | null;
@@ -59,12 +58,21 @@ export function AuthPage() {
           error.message ??
           "Coś poszło nie tak",
       );
+      return;
+    }
+
+    // Same message whether the account is new or already existed (no user enumeration).
+    if (mode === "signUp") {
+      setMode("signIn");
+      setPassword("");
+      setInfo("Jeśli adres jest poprawny, konto zostało utworzone. Zaloguj się.");
     }
   }
 
   function switchMode() {
     setMode(mode === "signUp" ? "signIn" : "signUp");
     setError(null);
+    setInfo(null);
   }
 
   return (
@@ -156,6 +164,12 @@ export function AuthPage() {
           {error && (
             <p className="m-0 text-sm font-semibold text-nav-accent" role="alert">
               {error}
+            </p>
+          )}
+
+          {info && (
+            <p className="m-0 text-sm font-semibold text-nav-fg" role="status">
+              {info}
             </p>
           )}
 
