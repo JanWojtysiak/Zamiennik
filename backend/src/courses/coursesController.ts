@@ -27,6 +27,26 @@ export async function searchCoursesController(req: Request, res: Response) {
   }
 }
 
+export async function getCourseController(req: Request, res: Response) {
+  try {
+    const { courseId } = req.params;
+
+    if (typeof courseId !== "string" || !courseId.trim()) {
+      return res.status(400).json({ error: "Nieprawidłowe id przedmiotu" });
+    }
+
+    const course = await coursesService.getCourseService(courseId.trim());
+
+    if (!course) {
+      return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
+    }
+
+    return res.status(200).json(course);
+  } catch {
+    return res.status(500).json({ error: "Bład serwera bład 500" });
+  }
+}
+
 export async function getCourseGroupsController(req: Request, res: Response) {
   try {
     const { courseId } = req.params;
