@@ -2,14 +2,13 @@ import * as offersController from './offersController.js';
 import { getSessionUserId } from '../auth/authService.js';
 import type { Request, Response } from 'express';
 import { getAllOffersService, getMineOffersService, getOfferByIdService, postOfferService } from './offersService.js';
-import type { Offer } from '../../generated/client.js';
 
 vi.mock('../auth/authService.js');
 vi.mock('./offersService.js');
 
 function createReqRes(reqOverrides = {}) {
   return {
-    req: { headers: {}, ...reqOverrides } as unknown as Request,
+    req: { headers: {}, query: {}, ...reqOverrides } as unknown as Request,
     res: {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
@@ -17,15 +16,28 @@ function createReqRes(reqOverrides = {}) {
   };
 }
 
-function createOffer(overrides: Partial<Offer> = {}): Offer {
+type OfferWithAuthor = Awaited<ReturnType<typeof getAllOffersService>>[number];
+
+function createOffer(overrides: Partial<OfferWithAuthor> = {}): OfferWithAuthor {
   return {
     id: 'offer-1',
     title: 'Test offer',
     offeredCourseId: 'course-1',
     wantedCourseId: 'course-2',
+    offeredGroupId: 'unit-1-1',
+    wantedGroupId: 'unit-1-2',
+    category: 'COURSE',
     createdById: 'user',
     createdAt: new Date(),
     updatedAt: new Date(),
+    createdBy: {
+      id: 'user',
+      name: 'Jan Kowalski',
+      firstName: 'Jan',
+      lastName: 'Kowalski',
+      image: null,
+      studentIndex: '284154',
+    },
     ...overrides,
   };
 }
@@ -41,7 +53,7 @@ describe.each([
     'postOfferController',
     offersController.postOfferController,
     postOfferService,
-    { body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1' } },
+    { body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-1-2' } },
   ],
 ])('%s', (_name, controller, service, reqOverrides) => {
   it('returns 401 when user is not logged in', async () => {
@@ -81,6 +93,30 @@ describe('getAllOffersController', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(offers);
   });
+
+  it('passes the category filter to the service', async () => {
+    const { req, res } = createReqRes({ query: { category: 'SPORT' } });
+
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+    vi.mocked(getAllOffersService).mockResolvedValue([]);
+
+    await offersController.getAllOffersController(req, res);
+
+    expect(getAllOffersService).toHaveBeenCalledWith('SPORT');
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('returns 400 for an unknown category', async () => {
+    const { req, res } = createReqRes({ query: { category: 'FOO' } });
+
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+
+    await offersController.getAllOffersController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Nieprawidłowa kategoria' });
+    expect(getAllOffersService).not.toHaveBeenCalled();
+  });
 });
 
 describe('getMineOffersController', () => {
@@ -92,7 +128,7 @@ describe('getMineOffersController', () => {
 
     await offersController.getMineOffersController(req, res);
 
-    expect(getMineOffersService).toHaveBeenCalledWith('user');
+    expect(getMineOffersService).toHaveBeenCalledWith('user', undefined);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(offers);
   });
@@ -136,7 +172,7 @@ describe('getOfferByIdController', () => {
 });
 
 describe('postOfferController', () => {
-  it('returns 400 when there is no offeredCourseId or wantedCourseId', async () => {
+  it('returns 400 when a course or group id is missing', async () => {
     const { req, res } = createReqRes({ body: {} });
     vi.mocked(getSessionUserId).mockResolvedValue('user');
 
@@ -149,7 +185,7 @@ describe('postOfferController', () => {
 
   it('returns 400 when offered and wanted courses differ', async () => {
     const { req, res } = createReqRes({
-      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-2' },
+      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-2', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-1-2' },
     });
     vi.mocked(getSessionUserId).mockResolvedValue('user');
 
@@ -162,9 +198,22 @@ describe('postOfferController', () => {
     expect(postOfferService).not.toHaveBeenCalled();
   });
 
+  it('returns 400 when offered and wanted groups are the same', async () => {
+    const { req, res } = createReqRes({
+      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-1-1' },
+    });
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+
+    await offersController.postOfferController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Wybierz inną grupę niż oddawana' });
+    expect(postOfferService).not.toHaveBeenCalled();
+  });
+
   it('returns 201 when offer is created', async () => {
     const { req, res } = createReqRes({
-      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1' },
+      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-1-2' },
     });
     const offer = createOffer();
     vi.mocked(getSessionUserId).mockResolvedValue('user');
@@ -176,14 +225,64 @@ describe('postOfferController', () => {
       userId: 'user',
       offeredCourseId: 'course-1',
       wantedCourseId: 'course-1',
+      offeredGroupId: 'unit-1-1',
+      wantedGroupId: 'unit-1-2',
+      category: 'COURSE',
     });
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(offer);
   });
 
+  it('returns 400 for an unknown category', async () => {
+    const { req, res } = createReqRes({
+      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-1-2', category: 'FOO' },
+    });
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+
+    await offersController.postOfferController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Nieprawidłowa kategoria' });
+    expect(postOfferService).not.toHaveBeenCalled();
+  });
+
+  it('allows sport offers to swap between different courses', async () => {
+    const { req, res } = createReqRes({
+      body: { offeredCourseId: 'wf-1', wantedCourseId: 'wf-2', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-2-1', category: 'SPORT' },
+    });
+    const offer = createOffer({ category: 'SPORT' });
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+    vi.mocked(postOfferService).mockResolvedValue(offer);
+
+    await offersController.postOfferController(req, res);
+
+    expect(postOfferService).toHaveBeenCalledWith({
+      userId: 'user',
+      offeredCourseId: 'wf-1',
+      wantedCourseId: 'wf-2',
+      offeredGroupId: 'unit-1-1',
+      wantedGroupId: 'unit-2-1',
+      category: 'SPORT',
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('returns 400 when a sport offer wants the same group it offers', async () => {
+    const { req, res } = createReqRes({
+      body: { offeredCourseId: 'wf-1', wantedCourseId: 'wf-1', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-1-1', category: 'SPORT' },
+    });
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+
+    await offersController.postOfferController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Wybierz inną grupę niż oddawana' });
+    expect(postOfferService).not.toHaveBeenCalled();
+  });
+
   it('returns 500 when service throws an error', async () => {
     const { req, res } = createReqRes({
-      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1' },
+      body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-1-2' },
     });
     vi.mocked(getSessionUserId).mockResolvedValue('user');
     vi.mocked(postOfferService).mockRejectedValue(new Error('db down'));
