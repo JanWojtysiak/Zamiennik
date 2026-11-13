@@ -1,15 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { User } from "@/lib/auth-client";
-import { Navbar } from "@/components/Navbar";
 import { OfferFilters, type OfferFilterId } from "@/components/OfferFilters";
-import { OfferCard, type Offer } from "@/components/OfferCard";
+import {
+  OfferCard,
+  type Offer,
+  type OfferCategory,
+} from "@/components/OfferCard";
 import { OfferForm } from "@/components/OfferForm";
 
-export function Dashboard({ user }: { user: User }) {
+export function Dashboard({
+  user,
+  category,
+  heading,
+}: {
+  user: User;
+  category: OfferCategory;
+  heading: string;
+}) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
+  const formPanelId = useId();
   const [activeFilters, setActiveFilters] = useState<Set<OfferFilterId>>(
     () => new Set(),
   );
@@ -29,8 +42,9 @@ export function Dashboard({ user }: { user: User }) {
 
     async function loadOffers() {
       try {
+        const params = new URLSearchParams({ category });
         const response = await fetch(
-          mineOnly ? "/api/offers/mine" : "/api/offers",
+          `${mineOnly ? "/api/offers/mine" : "/api/offers"}?${params}`,
           { credentials: "include" },
         );
         if (!response.ok) {
@@ -53,7 +67,7 @@ export function Dashboard({ user }: { user: User }) {
     return () => {
       cancelled = true;
     };
-  }, [mineOnly, reloadKey]);
+  }, [category, mineOnly, reloadKey]);
 
   function reloadOffers() {
     setLoading(true);
@@ -95,7 +109,13 @@ export function Dashboard({ user }: { user: User }) {
       >
         {offers.map((offer) => (
           <li key={offer.id}>
-            <OfferCard offer={offer} mine={offer.createdById === user.id} />
+            <OfferCard
+              offer={offer}
+              mine={offer.createdById === user.id}
+              onDeleted={(id) =>
+                setOffers((current) => current.filter((o) => o.id !== id))
+              }
+            />
           </li>
         ))}
       </ul>
@@ -103,14 +123,10 @@ export function Dashboard({ user }: { user: User }) {
   }
 
   return (
-    <>
-      <Navbar user={user} />
-      <main
-        id="ogloszenia"
-        className="flex w-full flex-1 flex-col px-[clamp(16px,3vw,40px)] py-8 text-left font-roboto text-[15px] leading-snug"
-      >
-        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6">
-          <div className="flex flex-col gap-4">
+    <main className="flex w-full flex-1 flex-col px-[clamp(16px,3vw,40px)] py-8 text-left font-roboto text-[15px] leading-snug">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h1
               style={{
                 margin: 0,
@@ -119,18 +135,40 @@ export function Dashboard({ user }: { user: User }) {
                 color: "var(--nav-fg)",
               }}
             >
-              Ogłoszenia
+              {heading}
             </h1>
-            <OfferForm onCreated={reloadOffers} />
-            <OfferFilters
-              active={activeFilters}
-              onToggle={toggleFilterAndReload}
-            />
+            <button
+              type="button"
+              onClick={() => setFormOpen((open) => !open)}
+              aria-expanded={formOpen}
+              aria-controls={formPanelId}
+              className="cursor-pointer rounded-md border border-nav-border bg-transparent px-3 py-1.5 text-sm font-semibold text-nav-fg hover:bg-nav-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nav-accent"
+            >
+              {formOpen ? "Anuluj" : "+ Dodaj ogłoszenie"}
+            </button>
           </div>
-
-          <section aria-label="Lista ogłoszeń">{content}</section>
+          {formOpen && (
+            <div
+              id={formPanelId}
+              className="rounded-lg border border-nav-border p-3"
+            >
+              <OfferForm
+                category={category}
+                onCreated={() => {
+                  setFormOpen(false);
+                  reloadOffers();
+                }}
+              />
+            </div>
+          )}
+          <OfferFilters
+            active={activeFilters}
+            onToggle={toggleFilterAndReload}
+          />
         </div>
-      </main>
-    </>
+
+        <section aria-label="Lista ogłoszeń">{content}</section>
+      </div>
+    </main>
   );
 }
