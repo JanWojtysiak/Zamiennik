@@ -1,25 +1,19 @@
 import type { Request, Response } from "express";
+import { firstIssueMessage } from "../lib/validation.js";
 import * as coursesService from "./courseService.js";
-
-
+import { courseIdParamsSchema, searchCoursesQuerySchema } from "./coursesSchemas.js";
 
 export async function searchCoursesController(req: Request, res: Response) {
   try {
-    const { name, page } = req.query;
+    const query = searchCoursesQuerySchema.safeParse(req.query);
 
-    if (typeof name !== "string" || !name.trim()) {
-      return res.status(400).json({ error: "Parametr name jest wymagany" });
-    }
-
-    const pageNumber = page === undefined ? 0 : Number(page);
-
-    if (!Number.isInteger(pageNumber) || pageNumber < 0) {
-      return res.status(400).json({ error: "Nieprawidłowy numer strony" });
+    if (!query.success) {
+      return res.status(400).json({ error: firstIssueMessage(query.error) });
     }
 
     const result = await coursesService.getsearchCoursesService(
-      name.trim(),
-      pageNumber,
+      query.data.name,
+      query.data.page,
     );
     return res.status(200).json(result);
   } catch {
@@ -29,13 +23,13 @@ export async function searchCoursesController(req: Request, res: Response) {
 
 export async function getCourseController(req: Request, res: Response) {
   try {
-    const { courseId } = req.params;
+    const params = courseIdParamsSchema.safeParse(req.params);
 
-    if (typeof courseId !== "string" || !courseId.trim()) {
-      return res.status(400).json({ error: "Nieprawidłowe id przedmiotu" });
+    if (!params.success) {
+      return res.status(400).json({ error: firstIssueMessage(params.error) });
     }
 
-    const course = await coursesService.getCourseService(courseId.trim());
+    const course = await coursesService.getCourseService(params.data.courseId);
 
     if (!course) {
       return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
@@ -49,13 +43,13 @@ export async function getCourseController(req: Request, res: Response) {
 
 export async function getCourseGroupsController(req: Request, res: Response) {
   try {
-    const { courseId } = req.params;
+    const params = courseIdParamsSchema.safeParse(req.params);
 
-    if (typeof courseId !== "string" || !courseId.trim()) {
-      return res.status(400).json({ error: "Nieprawidłowe id przedmiotu" });
+    if (!params.success) {
+      return res.status(400).json({ error: firstIssueMessage(params.error) });
     }
 
-    const groups = await coursesService.getCourseGroupsService(courseId.trim());
+    const groups = await coursesService.getCourseGroupsService(params.data.courseId);
     return res.status(200).json(groups);
   } catch {
     return res.status(500).json({ error: "Bład serwera bład 500" });

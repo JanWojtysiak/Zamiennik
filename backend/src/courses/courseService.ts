@@ -33,10 +33,19 @@ export async function getsearchCoursesService(
     start: String(page * PAGE_SIZE),
   });
 
+  const conducted = data.items.filter((course) => course.is_currently_conducted);
+
+  const withGroups = await Promise.all(
+    conducted.map(async (course) => ({
+      course,
+      hasGroups: (await getCourseGroupsService(course.id)).length > 0,
+    })),
+  );
+
   return {
-    courses: data.items
-      .filter((course) => course.is_currently_conducted)
-      .map((course) => ({
+    courses: withGroups
+      .filter(({ hasGroups }) => hasGroups)
+      .map(({ course }) => ({
         id: course.id,
         name: course.name.pl || course.name.en,
       })),
@@ -66,11 +75,11 @@ interface UsosUnitResponse {
 }
 
 export function getCurrentTermId(now = new Date()): string {
-  const month = now.getMonth() + 1;
+  const month = now.getMonth() + 1; // +1, bo liczmy od zera
   const year = now.getFullYear();
 
-  const startYear = month >= 10 ? year : year - 1;
-  const endYearShort = String(startYear + 1).slice(-2);
+  const startYear = month >= 10 ? year : year - 1; // paz,lis,grudzien = obecny rok; styczen... poprzedni
+  const endYearShort = String(startYear + 1).slice(-2); // rok akademicki konczy sie w kolejnym roku, np. 2026/27
   const isWinter = month >= 10 || month <= 2;
 
   return `${startYear}/${endYearShort}-${isWinter ? "Z" : "L"}`;
@@ -90,7 +99,6 @@ export async function getCourseGroupsService(
     });
     unitIds = edition.course_units_ids;
   } catch (error) {
-    // USOS answers 400 when the course has no edition in the term.
     if (error instanceof UsosError && error.status === 400) return [];
     throw error;
   }
