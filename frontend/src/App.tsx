@@ -5,6 +5,7 @@ import { TABS } from "@/lib/tabs";
 import { AuthPage } from "@/components/AuthPage";
 import { Dashboard } from "@/components/Dashboard";
 import { Navbar } from "@/components/Navbar";
+import { Settings } from "@/components/Settings";
 
 function App() {
   const { data: session, isPending } = authClient.useSession();
@@ -33,6 +34,10 @@ function App() {
             }
           />
         ))}
+        <Route
+          path="/settings"
+          element={<Settings user={session.user} />}
+        />
         <Route path="*" element={<Navigate to={TABS[0].path} replace />} />
       </Routes>
     </>
