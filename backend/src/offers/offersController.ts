@@ -1,17 +1,12 @@
 import type { Request, Response } from "express";
 import { getSessionUserId } from "../auth/authService.js";
+import { firstIssueMessage } from "../lib/validation.js";
 import * as offersService from "./offersService.js";
-import { OfferCategory } from "../../generated/enums.js";
-
-const isOfferCategory = (value: unknown): value is OfferCategory =>
-  Object.values(OfferCategory).includes(value as OfferCategory);
-
-// Reads the optional ?category= filter. Returns false when the value is invalid.
-function parseCategoryQuery(req: Request): OfferCategory | undefined | false {
-  const { category } = req.query;
-  if (category === undefined) return undefined;
-  return isOfferCategory(category) ? category : false;
-}
+import {
+  offerCategoryQuerySchema,
+  offerIdParamsSchema,
+  postOfferBodySchema,
+} from "./offersSchemas.js";
 
 //GETs
 
@@ -23,12 +18,12 @@ export async function getAllOffersController(req: Request, res: Response) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const category = parseCategoryQuery(req);
-    if (category === false) {
-      return res.status(400).json({ error: "Nieprawidłowa kategoria" });
+    const query = offerCategoryQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      return res.status(400).json({ error: firstIssueMessage(query.error) });
     }
 
-    const offers = await offersService.getAllOffersService(category);
+    const offers = await offersService.getAllOffersService(query.data.category);
     return res.status(200).json(offers);
   } catch {
     return res.status(500).json({ error: "Bład serwera bład 500" });
@@ -43,12 +38,12 @@ export async function getMineOffersController(req: Request, res: Response) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const category = parseCategoryQuery(req);
-    if (category === false) {
-      return res.status(400).json({ error: "Nieprawidłowa kategoria" });
+    const query = offerCategoryQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      return res.status(400).json({ error: firstIssueMessage(query.error) });
     }
 
-    const offers = await offersService.getMineOffersService(userId, category);
+    const offers = await offersService.getMineOffersService(userId, query.data.category);
     return res.status(200).json(offers);
   } catch {
     return res.status(500).json({ error: "Bład serwera bład 500" });
@@ -57,13 +52,13 @@ export async function getMineOffersController(req: Request, res: Response) {
 
 export async function getOfferByIdController(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const params = offerIdParamsSchema.safeParse(req.params);
 
-    if (typeof id !== "string") {
-      return res.status(400).json({ error: "Nieprawidłowe id" });
+    if (!params.success) {
+      return res.status(400).json({ error: firstIssueMessage(params.error) });
     }
 
-    const offer = await offersService.getOfferByIdService(id);
+    const offer = await offersService.getOfferByIdService(params.data.id);
     return res.status(200).json(offer);
   } catch {
     return res.status(500).json({ error: "Bład serwera bład 500" });
@@ -75,47 +70,47 @@ export async function getOfferByIdController(req: Request, res: Response) {
 export async function postOfferController(req: Request, res: Response) {
   try {
     const userId = await getSessionUserId(req.headers);
-    const {
-      offeredCourseId,
-      wantedCourseId,
-      offeredGroupId,
-      wantedGroupId,
-      category = "COURSE",
-    } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    if (!offeredCourseId || !wantedCourseId || !offeredGroupId || !wantedGroupId) {
-      return res.status(400).json({ error: "Wszystkie pola są wymagane" });
+    const body = postOfferBodySchema.safeParse(req.body);
+
+    if (!body.success) {
+      return res.status(400).json({ error: firstIssueMessage(body.error) });
     }
 
-    if (!isOfferCategory(category)) {
-      return res.status(400).json({ error: "Nieprawidłowa kategoria" });
-    }
-
-    // Regular courses swap groups within one course; sport classes (WF) may
-    // swap between disciplines, which USOS keeps as separate courses.
-    if (category === "COURSE" && offeredCourseId !== wantedCourseId) {
-      return res.status(400).json({
-        error: "Można wymienić się tylko na grupę tego samego przedmiotu",
-      });
-    }
-
-    if (offeredCourseId === wantedCourseId && offeredGroupId === wantedGroupId) {
-      return res.status(400).json({ error: "Wybierz inną grupę niż oddawana" });
-    }
-
-    const offer = await offersService.postOfferService({
-      userId,
-      offeredCourseId,
-      wantedCourseId,
-      offeredGroupId,
-      wantedGroupId,
-      category,
-    });
+    const offer = await offersService.postOfferService({ userId, ...body.data });
     return res.status(201).json(offer);
+  } catch {
+    return res.status(500).json({ error: "Bład serwera bład 500" });
+  }
+}
+
+//DELETEs
+
+export async function deleteOfferController(req: Request, res: Response) {
+  try {
+    const userId = await getSessionUserId(req.headers);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const params = offerIdParamsSchema.safeParse(req.params);
+
+    if (!params.success) {
+      return res.status(400).json({ error: firstIssueMessage(params.error) });
+    }
+
+    const deleted = await offersService.deleteOfferService(params.data.id, userId);
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Nie znaleziono ogłoszenia" });
+    }
+
+    return res.status(204).end();
   } catch {
     return res.status(500).json({ error: "Bład serwera bład 500" });
   }

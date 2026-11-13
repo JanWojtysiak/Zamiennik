@@ -1,7 +1,7 @@
 import * as offersController from './offersController.js';
 import { getSessionUserId } from '../auth/authService.js';
 import type { Request, Response } from 'express';
-import { getAllOffersService, getMineOffersService, getOfferByIdService, postOfferService } from './offersService.js';
+import { deleteOfferService, getAllOffersService, getMineOffersService, getOfferByIdService, postOfferService } from './offersService.js';
 
 vi.mock('../auth/authService.js');
 vi.mock('./offersService.js');
@@ -12,6 +12,7 @@ function createReqRes(reqOverrides = {}) {
     res: {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
+      end: vi.fn(),
     } as unknown as Response,
   };
 }
@@ -55,6 +56,7 @@ describe.each([
     postOfferService,
     { body: { offeredCourseId: 'course-1', wantedCourseId: 'course-1', offeredGroupId: 'unit-1-1', wantedGroupId: 'unit-1-2' } },
   ],
+  ['deleteOfferController', offersController.deleteOfferController, deleteOfferService, { params: { id: 'offer-1' } }],
 ])('%s', (_name, controller, service, reqOverrides) => {
   it('returns 401 when user is not logged in', async () => {
     const { req, res } = createReqRes(reqOverrides);
@@ -292,5 +294,38 @@ describe('postOfferController', () => {
     expect(postOfferService).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: 'Bład serwera bład 500' });
+  });
+});
+describe('deleteOfferController', () => {
+  it('returns 400 when id is blank', async () => {
+    const { req, res } = createReqRes({ params: { id: '  ' } });
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+
+    await offersController.deleteOfferController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(deleteOfferService).not.toHaveBeenCalled();
+  });
+
+  it('returns 204 when the offer is deleted', async () => {
+    const { req, res } = createReqRes({ params: { id: 'offer-1' } });
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+    vi.mocked(deleteOfferService).mockResolvedValue(true);
+
+    await offersController.deleteOfferController(req, res);
+
+    expect(deleteOfferService).toHaveBeenCalledWith('offer-1', 'user');
+    expect(res.status).toHaveBeenCalledWith(204);
+    expect(res.end).toHaveBeenCalled();
+  });
+
+  it('returns 404 when the offer does not exist or belongs to someone else', async () => {
+    const { req, res } = createReqRes({ params: { id: 'offer-1' } });
+    vi.mocked(getSessionUserId).mockResolvedValue('user');
+    vi.mocked(deleteOfferService).mockResolvedValue(false);
+
+    await offersController.deleteOfferController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
   });
 });

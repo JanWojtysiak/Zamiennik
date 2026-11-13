@@ -1,5 +1,6 @@
+import { Prisma } from "../../generated/client.js";
 import { prisma } from "../lib/prisma.js";
-import type { OfferCategory } from "../../generated/enums.js";
+import type { OfferCategory } from "./offerCategory.js";
 
 interface Offer {
   userId: string;
@@ -10,31 +11,25 @@ interface Offer {
   category: OfferCategory;
 }
 
-// Author data loaded with an offer. The email is only used to derive the
-// student index and is stripped before the offer leaves this module.
 const offerInclude = {
   createdBy: {
     select: { id: true, name: true, firstName: true, lastName: true, image: true, email: true },
   },
 } as const;
 
-// PWr student emails look like "284154@student.pwr.edu.pl"; the local part is the index.
+type OfferWithAuthor = Prisma.OfferGetPayload<{ include: typeof offerInclude }>;
+
 function studentIndexFromEmail(email: string) {
   const localPart = email.split("@")[0] ?? "";
   return /^\d+$/.test(localPart) ? localPart : null;
 }
 
-type PublicAuthor<A> = Omit<A, "email"> & { studentIndex: string | null };
-
-function toPublicOffer<T extends { createdBy: { email: string } }>(
-  offer: T,
-): Omit<T, "createdBy"> & { createdBy: PublicAuthor<T["createdBy"]> } {
+function toPublicOffer(offer: OfferWithAuthor) {
   const { email, ...author } = offer.createdBy;
-  const createdBy = {
-    ...(author as Omit<T["createdBy"], "email">),
-    studentIndex: studentIndexFromEmail(email),
+  return {
+    ...offer,
+    createdBy: { ...author, studentIndex: studentIndexFromEmail(email) },
   };
-  return { ...offer, createdBy };
 }
 
 //GETs
@@ -70,6 +65,7 @@ export async function getOfferByIdService(id: string) {
   });
   return offer && toPublicOffer(offer);
 }
+
 //POSTs
 
 export async function postOfferService(offer: Offer) {
@@ -87,4 +83,19 @@ export async function postOfferService(offer: Offer) {
     include: offerInclude,
   });
   return toPublicOffer(created);
+}
+
+//DELETEs
+
+export async function deleteOfferService(id: string, userId: string) {
+  try {
+    await prisma.offer.delete({ where: { id, createdById: userId } });
+    return true;
+  } catch (error) {
+    // P2025: nie ma takiego ogłoszenia albo należy do kogoś innego.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return false;
+    }
+    throw error;
+  }
 }
