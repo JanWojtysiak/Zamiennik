@@ -14,7 +14,7 @@ const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nav-accent";
 
 const fieldClass =
-  "relative flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-md border border-nav-border bg-[var(--bg)] px-4 py-2 text-base text-nav-fg";
+  "relative flex min-h-10 min-w-0 flex-1 items-center gap-2 rounded-md border border-nav-border bg-[var(--bg)] px-3 py-1.5 text-sm text-nav-fg";
 
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 300;
@@ -123,7 +123,7 @@ export function CourseSelect({
     <div className={fieldClass}>
       <input
         aria-label={label}
-        className={`min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-nav-fg outline-none placeholder:text-nav-muted ${focusRing}`}
+        className={`min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-nav-fg outline-none placeholder:text-nav-muted ${focusRing}`}
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
