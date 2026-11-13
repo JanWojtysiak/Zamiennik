@@ -21,6 +21,16 @@ export interface CourseSearchResult {
 
 const PAGE_SIZE = 20;
 
+interface UsosCourseResponse {
+  id: string;
+  name: LangDict;
+}
+
+export interface CourseInfo {
+  id: string;
+  name: string;
+}
+
 export async function getsearchCoursesService(
   query: string,
   page = 0,
@@ -51,6 +61,22 @@ export async function getsearchCoursesService(
       })),
     nextPage: data.next_page,
   };
+}
+
+
+
+export async function getCourseService(courseId: string): Promise<CourseInfo | null> {
+  try {
+    const course = await usosGet<UsosCourseResponse>("courses/course", {
+      course_id: courseId,
+      fields: "id|name",
+    });
+
+    return { id: course.id, name: course.name.pl || course.name.en };
+  } catch (error) {
+    if (error instanceof UsosError && error.status === 400) return null;
+    throw error;
+  }
 }
 
 export interface CourseGroup {

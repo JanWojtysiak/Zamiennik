@@ -8,7 +8,6 @@ import {
 
 export type OfferCategory = "COURSE" | "SPORT";
 
-// Shape of an offer as returned by GET /api/offers (Prisma Offer serialized to JSON).
 export interface Offer {
   id: string;
   title: string;
@@ -23,7 +22,6 @@ export interface Offer {
   createdBy: OfferAuthor;
 }
 
-// Public author data included with each offer (no email, only the index derived from it).
 export interface OfferAuthor {
   id: string;
   name: string;
@@ -46,15 +44,17 @@ function useCourseName(courseId: string | null) {
     if (!courseId) return;
     let cancelled = false;
 
-    fetchCourse(courseId)
-      .then((course) => {
+    async function load(id: string) {
+      try {
+        const course = await fetchCourse(id);
         if (!cancelled) setName(course.name);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error(err);
-        // Fall back to the course code so the card still says what it is about.
-        if (!cancelled) setName(courseId);
-      });
+        if (!cancelled) setName(id);
+      }
+    }
+
+    void load(courseId);
 
     return () => {
       cancelled = true;
@@ -87,7 +87,6 @@ function OfferGroups({
   wantedCourseName,
 }: {
   offer: Offer;
-  // Set only when the wanted course differs from the offered one (sport swaps).
   wantedCourseName: string | null;
 }) {
   const [groups, setGroups] = useState<CourseGroup[] | null>(null);
@@ -102,14 +101,17 @@ function OfferGroups({
         ? [offeredCourseId]
         : [offeredCourseId, wantedCourseId];
 
-    fetchGroupsOf(courseIds)
-      .then((data) => {
+    async function load() {
+      try {
+        const data = await fetchGroupsOf(courseIds);
         if (!cancelled) setGroups(data);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error(err);
         if (!cancelled) setError(true);
-      });
+      }
+    }
+
+    void load();
 
     return () => {
       cancelled = true;

@@ -57,15 +57,18 @@ function useCourseGroups(
     if (!course) return;
 
     let cancelled = false;
-    fetchCourseGroups(course.id)
-      .then((data) => {
+    async function load(selected: Course) {
+      try {
+        const data = await fetchCourseGroups(selected.id);
         if (cancelled) return;
         setGroups(data);
-        setLoadedFor(course);
-      })
-      .catch(() => {
+        setLoadedFor(selected);
+      } catch {
         if (!cancelled) onError("Nie udało się pobrać grup z USOS.");
-      });
+      }
+    }
+
+    void load(course);
 
     return () => {
       cancelled = true;
