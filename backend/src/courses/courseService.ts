@@ -1,4 +1,5 @@
 import { usosGet, UsosError } from "../lib/usosHelper.js";
+import { redis } from "../lib/redis.js";
 
 interface LangDict {
   pl: string;
@@ -19,8 +20,6 @@ export interface CourseSearchResult {
   nextPage: boolean;
 }
 
-const PAGE_SIZE = 20;
-
 interface UsosCourseResponse {
   id: string;
   name: LangDict;
@@ -30,6 +29,29 @@ export interface CourseInfo {
   id: string;
   name: string;
 }
+
+export interface CourseGroup {
+  id: string;
+  unitId: string;
+  groupNumber: number;
+  classType: string;
+  lecturers: string[];
+}
+
+interface UsosCourseEditionResponse {
+  course_units_ids: string[];
+}
+
+interface UsosUnitResponse {
+  id: string;
+  groups: {
+    group_number: number;
+    class_type: LangDict;
+    lecturers: { first_name: string; last_name: string }[];
+  }[];
+}
+
+const PAGE_SIZE = 20;
 
 export async function getsearchCoursesService(
   query: string,
@@ -63,8 +85,6 @@ export async function getsearchCoursesService(
   };
 }
 
-
-
 export async function getCourseService(courseId: string): Promise<CourseInfo | null> {
   try {
     const course = await usosGet<UsosCourseResponse>("courses/course", {
@@ -79,27 +99,6 @@ export async function getCourseService(courseId: string): Promise<CourseInfo | n
   }
 }
 
-export interface CourseGroup {
-  id: string;
-  unitId: string;
-  groupNumber: number;
-  classType: string;
-  lecturers: string[];
-}
-
-interface UsosCourseEditionResponse {
-  course_units_ids: string[];
-}
-
-interface UsosUnitResponse {
-  id: string;
-  groups: {
-    group_number: number;
-    class_type: LangDict;
-    lecturers: { first_name: string; last_name: string }[];
-  }[];
-}
-
 export function getCurrentTermId(now = new Date()): string {
   const month = now.getMonth() + 1; // +1, bo liczmy od zera
   const year = now.getFullYear();
@@ -111,9 +110,28 @@ export function getCurrentTermId(now = new Date()): string {
   return `${startYear}/${endYearShort}-${isWinter ? "Z" : "L"}`;
 }
 
+const GROUPS_TTL_SECONDS = 86400; 
+
 export async function getCourseGroupsService(
   courseId: string,
   termId = getCurrentTermId(),
+): Promise<CourseGroup[]> {
+  const key = `usos:groups:${courseId}:${termId}`;
+
+  const cached = await redis.get(key);
+  if (cached) return JSON.parse(cached);
+
+  const groups = await fetchCourseGroupsFromUsos(courseId, termId);
+
+  await redis.set(key, JSON.stringify(groups), {
+    expiration: { type: "EX", value: GROUPS_TTL_SECONDS },
+  });
+  return groups;
+}
+
+async function fetchCourseGroupsFromUsos(
+  courseId: string,
+  termId: string,
 ): Promise<CourseGroup[]> {
   let unitIds: string[];
 
