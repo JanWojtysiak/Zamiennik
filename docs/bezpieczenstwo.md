@@ -68,3 +68,24 @@ content-type: application/json; charset=utf-8
 ![T-01: payload ' OR '1'='1 w wyszukiwarce przedmiotów](img/t01-sqli-courses-search.png)
 
 **Wynik:** pusta lista, bez błędu SQL i bez zwrócenia wszystkich przedmiotów. Wartość `name` nie trafia do naszej bazy. Backend przekazuje ją przez `URLSearchParams` do USOS API (`courses/search`), które traktuje ją jako zwykły tekst wyszukiwania. Pozostałe zapytania do bazy idą przez Prisma, które parametryzuje wartości.
+
+### T-02: ✅ DOM-based XSS (DOM Invader)
+**Data:** 2026-11-16 | **Status:** ✅ Bezpieczne
+**Cel:** sprawdzić, czy dane wpisywane przez użytkownika trafiają do niebezpiecznych sinków DOM (np. `innerHTML`, `eval`, `document.write`), co mogłoby umożliwić atak DOM XSS.
+
+**Narzędzie:** Burp Suite → wbudowana przeglądarka z rozszerzeniem DOM Invader (v2.0.12)
+
+**Metoda:**
+1. Włączono DOM Invader z canary `esiax0z3`.
+2. Zalogowano się do aplikacji i przejrzano dostępne podstrony (formularz logowania, wyszukiwarka, widoki CV).
+3. W zakładce DOM Invader (DevTools → DOM) sprawdzono wyniki automatycznego skanowania.
+
+**Wynik:**
+```
+Sinks (0)
+Sources (0)
+```
+
+![T-02: DOM Invader — brak sinków i źródeł](img/t02-dom-invader-no-sinks.png)
+
+**Wynik:** DOM Invader nie znalazł żadnych sinków ani źródeł. Aplikacja nie wstawia danych użytkownika do DOM przez niebezpieczne metody (`innerHTML`, `eval`, `document.write`). Dane renderowane są przez React, który domyślnie escapuje wartości w JSX — użycie `dangerouslySetInnerHTML` nie występuje w kodzie frontendu.
