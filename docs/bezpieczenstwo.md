@@ -3,18 +3,12 @@
 > Zastosowanie wiedzy którą pozyskałem z: [PortSwigger Web Security Academy](https://portswigger.net/web-security) w celu tworzenia bezpiecznych aplikacji webowych..
 
 **Autor:** Jan Wojtysiak
-**Ostatnia aktualizacja:** 2026-11-10
-
-
 
 **Narzędzia:**
 - Burp Suite Community Edition, Caido (Proxy, Repeater, Intruder)
 - DevTools przeglądarki (Network, Application → Cookies)
 - `curl`
 
-**Środowisko:** lokalne (`docker compose up`): frontend `http://localhost:18473`, backend `http://localhost:18421`. Zmiany w kodzie przeładowują się w kontenerach automatycznie (`tsx watch` z `CHOKIDAR_USEPOLLING` i Vite z `usePolling`), więc poprawkę można od razu przetestować ponownie bez restartu.
-
-**Dowody:** zrzuty ekranu z testów są w `docs/img/`.
 
 **Legenda statusów:**
 - ✅ **Bezpieczne** — atak się nie udał
@@ -27,10 +21,7 @@
 ## 3. Zabezpieczenia wprowadzone w projekcie
 
 ### 3.1 Rejestracja tylko z domeną PWr
-**Temat PortSwigger:** Authentication, Business logic vulnerabilities
-**Plik:** `backend/src/lib/auth.ts`
 
-Hook `before` w Better Auth odrzuca rejestrację, jeśli e-mail nie należy do domeny `pwr.edu.pl` (lub jej subdomeny). Walidacja działa **po stronie serwera**, więc nie da się jej obejść, pomijając formularz i wysyłając żądanie bezpośrednio. Adres jest normalizowany (`trim()`, `toLowerCase()`), a domena porównywana dokładnie. Dzięki temu nie przechodzą adresy typu `x@pwr.edu.pl.attacker.com` ani `x@fakepwr.edu.pl`.
 
 ### 3.2 Ogólne komunikaty błędów
 Kontrolery łapią wyjątki i zwracają ogólny komunikat `500` bez stack trace’a ani szczegółów bazy.
@@ -55,7 +46,7 @@ Porty backendu i frontendu są bindowane do `127.0.0.1`, a PostgreSQL nie jest w
 
 ## 4. Testy manualne
 
-### T-01: SQL injection w wyszukiwarce przedmiotów
+### T-01: ✅ SQL injection w wyszukiwarce przedmiotów
 **Data:** 2026-11-10 | **Status:** ✅ Bezpieczne
 **Cel:** sprawdzić, czy parametr `name` w `GET /api/courses/search` pozwala wstrzyknąć SQL i zwrócić wszystkie rekordy.
 

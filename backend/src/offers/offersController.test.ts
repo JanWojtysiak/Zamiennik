@@ -6,6 +6,8 @@ import { deleteOfferService, getAllOffersService, getMineOffersService, getOffer
 vi.mock('../auth/authService.js');
 vi.mock('./offersService.js');
 
+type OfferWithAuthor = Awaited<ReturnType<typeof getAllOffersService>>[number];
+
 function createReqRes(reqOverrides = {}) {
   return {
     req: { headers: {}, query: {}, ...reqOverrides } as unknown as Request,
@@ -16,8 +18,6 @@ function createReqRes(reqOverrides = {}) {
     } as unknown as Response,
   };
 }
-
-type OfferWithAuthor = Awaited<ReturnType<typeof getAllOffersService>>[number];
 
 function createOffer(overrides: Partial<OfferWithAuthor> = {}): OfferWithAuthor {
   return {
