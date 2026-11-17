@@ -64,5 +64,9 @@ export const auth = betterAuth({
       }
     }),
   },
+  advanced: {
+    // CSRF: the browser never attaches the session cookie to requests initiated by other sites.
+    defaultCookieAttributes: { sameSite: "strict" },
+  },
   trustedOrigins: frontendOrigins,
 });

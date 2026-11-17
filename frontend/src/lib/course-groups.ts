@@ -1,3 +1,5 @@
+import { csrfHeaders } from "./csrf";
+
 // Shape of a group as returned by GET /api/courses/:courseId/groups.
 export interface CourseGroup {
   id: string;
@@ -15,6 +17,7 @@ export interface CourseInfo {
 export async function fetchCourse(courseId: string) {
   const response = await fetch(`/api/courses/${encodeURIComponent(courseId)}`, {
     credentials: "include",
+    headers: csrfHeaders,
   });
 
   if (!response.ok) {
@@ -27,7 +30,7 @@ export async function fetchCourse(courseId: string) {
 export async function fetchCourseGroups(courseId: string) {
   const response = await fetch(
     `/api/courses/${encodeURIComponent(courseId)}/groups`,
-    { credentials: "include" },
+    { credentials: "include", headers: csrfHeaders },
   );
 
   if (!response.ok) {

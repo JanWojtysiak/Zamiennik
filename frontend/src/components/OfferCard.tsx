@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf";
 import {
   fetchCourse,
   fetchCourseGroups,
@@ -195,9 +196,8 @@ export function OfferCard({
     try {
       const response = await fetch(
         `/api/offers/${encodeURIComponent(offer.id)}`,
-        { method: "DELETE", credentials: "include" },
+        { method: "DELETE", credentials: "include", headers: csrfHeaders },
       );
-      // 404 means the offer is already gone, so drop it from the list as well.
       if (!response.ok && response.status !== 404) {
         throw new Error(`status ${response.status}`);
       }

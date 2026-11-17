@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf";
 import { CourseSelect, type Course } from "@/components/CourseSelect";
 import type { OfferCategory } from "@/components/OfferCard";
 import {
@@ -159,6 +160,7 @@ export function OfferForm({
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...csrfHeaders,
         },
         body: JSON.stringify(offer),
       });
@@ -190,6 +192,7 @@ export function OfferForm({
             label={isSport ? "Oddajesz – zajęcia" : "Oddajesz – przedmiot"}
             value={offeredCourse}
             onChange={selectCourse}
+            category={category}
           />
           <GroupSelect
             label="Oddajesz – grupa"
@@ -208,6 +211,7 @@ export function OfferForm({
               label="Chcesz – zajęcia"
               value={wantedCourse}
               onChange={selectWantedCourse}
+              category={category}
             />
           ) : (
             <div className={`${fieldClass} flex-1`}>

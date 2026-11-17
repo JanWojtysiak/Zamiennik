@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf";
 import type { User } from "@/lib/auth-client";
 import { OfferFilters, type OfferFilterId } from "@/components/OfferFilters";
 import {
@@ -45,7 +46,7 @@ export function Dashboard({
         const params = new URLSearchParams({ category });
         const response = await fetch(
           `${mineOnly ? "/api/offers/mine" : "/api/offers"}?${params}`,
-          { credentials: "include" },
+          { credentials: "include", headers: csrfHeaders },
         );
         if (!response.ok) {
           throw new Error(`status ${response.status}`);

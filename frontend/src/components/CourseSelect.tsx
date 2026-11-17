@@ -1,4 +1,6 @@
 import { useEffect, useId, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf";
+import type { OfferCategory } from "@/components/OfferCard";
 
 export interface Course {
   id: string;
@@ -19,10 +21,16 @@ const fieldClass =
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 300;
 
-async function fetchCourses(name: string, page: number) {
+async function fetchCourses(
+  name: string,
+  page: number,
+  category?: OfferCategory,
+) {
   const params = new URLSearchParams({ name, page: String(page) });
+  if (category) params.set("category", category);
   const response = await fetch(`/api/courses/search?${params}`, {
     credentials: "include",
+    headers: csrfHeaders,
   });
 
   if (!response.ok) {
@@ -36,10 +44,13 @@ export function CourseSelect({
   label,
   value,
   onChange,
+  category,
 }: {
   label: string;
   value: Course | null;
   onChange: (course: Course | null) => void;
+  // Narrows results, e.g. SPORT shows only WF classes.
+  category?: OfferCategory;
 }) {
   const listId = useId();
   const [query, setQuery] = useState("");
@@ -60,7 +71,7 @@ export function CourseSelect({
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchCourses(trimmed, 0);
+        const data = await fetchCourses(trimmed, 0, category);
         if (cancelled) return;
         setCourses(data.courses);
         setNextPage(data.nextPage);
@@ -76,12 +87,12 @@ export function CourseSelect({
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [trimmed]);
+  }, [trimmed, category]);
 
   async function loadMore() {
     setLoading(true);
     try {
-      const data = await fetchCourses(trimmed, page + 1);
+      const data = await fetchCourses(trimmed, page + 1, category);
       setCourses((current) => [...current, ...data.courses]);
       setNextPage(data.nextPage);
       setPage(page + 1);
@@ -131,7 +142,9 @@ export function CourseSelect({
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        placeholder="szukaj przedmiotu"
+        placeholder={
+          category === "SPORT" ? "szukaj zajęć WF" : "szukaj przedmiotu"
+        }
         autoComplete="off"
         role="combobox"
         aria-expanded={showList}
